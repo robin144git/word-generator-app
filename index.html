@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Word Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 w-11/12 max-w-md text-center">
+        <!-- Header -->
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Random Word Generator</h1>
+        <p class="text-gray-500 mb-6">Discover a new word and its meaning.</p>
+
+        <!-- Word Display Area -->
+        <div id="word-container" class="bg-gray-50 rounded-lg p-6 min-h-[200px] flex flex-col justify-center items-center">
+            <!-- Word Content (hidden until loaded) -->
+            <div id="word-content" class="text-left opacity-0 transition-opacity duration-500 ease-in-out">
+                 <h2 id="word" class="text-3xl md:text-4xl font-bold text-blue-600 capitalize mb-2"></h2>
+                 <p id="pronunciation" class="text-gray-500 italic mb-4"></p>
+                 <p id="definition" class="text-gray-700 md:text-lg"></p>
+            </div>
+             <!-- Loader (shown while loading) -->
+             <div id="loader">
+                <p class="text-gray-500">Loading dictionary...</p>
+             </div>
+        </div>
+
+        <!-- Action Button -->
+        <button id="generate-btn" class="mt-6 w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 active:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200" disabled>
+            Loading...
+        </button>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const wordEl = document.getElementById('word');
+        const pronunciationEl = document.getElementById('pronunciation');
+        const definitionEl = document.getElementById('definition');
+        const wordContent = document.getElementById('word-content');
+        const loader = document.getElementById('loader');
+
+        let dictionary = {};
+        let dictionaryKeys = [];
+        let lastWord = '';
+
+        // Load the dictionary from the external file
+        async function loadDictionary() {
+            try {
+                // This will fetch the dictionary.json file from the same folder
+                const response = await fetch('dictionary.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                dictionary = await response.json();
+                dictionaryKeys = Object.keys(dictionary);
+                
+                // Once loaded, hide loader, show content, and enable the button
+                loader.style.display = 'none';
+                wordContent.classList.remove('opacity-0');
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Get New Word';
+                getWord(); // Show the first word immediately
+
+            } catch (error) {
+                console.error("Could not load dictionary:", error);
+                loader.innerHTML = `
+                    <h3 class="text-xl font-bold text-red-600">Error</h3>
+                    <p class="text-gray-600 mt-2">Could not load the dictionary file. If you're running this locally, you need a local server.</p>`;
+                generateBtn.textContent = 'Failed to Load';
+            }
+        }
+
+        const getWord = () => {
+            if (dictionaryKeys.length === 0) return;
+
+            let randomWord;
+            do {
+                const randomIndex = Math.floor(Math.random() * dictionaryKeys.length);
+                randomWord = dictionaryKeys[randomIndex];
+            } while (dictionaryKeys.length > 1 && randomWord === lastWord);
+            
+            lastWord = randomWord;
+            const definitionText = dictionary[randomWord];
+
+            wordContent.classList.add('opacity-0');
+            setTimeout(() => {
+                wordEl.textContent = randomWord;
+                pronunciationEl.textContent = '';
+                definitionEl.textContent = definitionText || 'No definition found.';
+                wordContent.classList.remove('opacity-0');
+            }, 150);
+        };
+
+        generateBtn.addEventListener('click', getWord);
+
+        // Start loading the dictionary when the page loads
+        loadDictionary();
+    </script>
+</body>
+</html>
+
